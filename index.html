@@ -65,6 +65,8 @@
                     cell.textContent = initialBoard[row][col];
                     cell.classList.add('fixed');
                     cell.contentEditable = false;
+                } else {
+                    cell.textContent = ''; // اطمینان از خالی بودن سلول‌های قابل ویرایش
                 }
             });
         }
@@ -139,43 +141,39 @@
 
         // ایجاد یک جدول سودوکو حل‌شده تصادفی
         function generateRandomSolvedBoard() {
-            const baseBoard = [
-                [5, 3, 4, 6, 7, 8, 9, 1, 2],
-                [6, 7, 2, 1, 9, 5, 3, 4, 8],
-                [1, 9, 8, 3, 4, 2, 5, 6, 7],
-                [8, 5, 9, 7, 6, 1, 4, 2, 3],
-                [4, 2, 6, 8, 5, 3, 7, 9, 1],
-                [7, 1, 3, 9, 2, 4, 8, 5, 6],
-                [9, 6, 1, 5, 3, 7, 2, 8, 4],
-                [2, 8, 7, 4, 1, 9, 6, 3, 5],
-                [3, 4, 5, 2, 8, 6, 1, 7, 9]
-            ];
-
-            // جابجایی‌های تصادفی برای ایجاد تنوع
-            shuffleBoard(baseBoard);
-            return baseBoard;
+            const board = Array.from({ length: 9 }, () => Array(9).fill(0));
+            solveSudoku(board);
+            return board;
         }
 
-        // جابجایی‌های تصادفی در جدول
-        function shuffleBoard(board) {
-            for (let i = 0; i < 10; i++) {
-                const num1 = Math.floor(Math.random() * 9) + 1;
-                const num2 = Math.floor(Math.random() * 9) + 1;
-                swapNumbers(board, num1, num2);
-            }
-        }
-
-        // جابجایی دو عدد در جدول
-        function swapNumbers(board, num1, num2) {
+        // الگوریتم حل سودوکو
+        function solveSudoku(board) {
             for (let row = 0; row < 9; row++) {
                 for (let col = 0; col < 9; col++) {
-                    if (board[row][col] === num1) {
-                        board[row][col] = num2;
-                    } else if (board[row][col] === num2) {
-                        board[row][col] = num1;
+                    if (board[row][col] === 0) {
+                        for (let num = 1; num <= 9; num++) {
+                            if (isValid(board, row, col, num)) {
+                                board[row][col] = num;
+                                if (solveSudoku(board)) return true;
+                                board[row][col] = 0;
+                            }
+                        }
+                        return false;
                     }
                 }
             }
+            return true;
+        }
+
+        // بررسی معتبر بودن عدد
+        function isValid(board, row, col, num) {
+            for (let i = 0; i < 9; i++) {
+                if (board[row][i] === num || board[i][col] === num || 
+                    board[Math.floor(row / 3) * 3 + Math.floor(i / 3)][Math.floor(col / 3) * 3 + (i % 3)] === num) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         // حذف اعداد بر اساس درجه سختی
