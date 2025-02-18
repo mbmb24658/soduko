@@ -46,6 +46,31 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        /* اضافه کردن رنگ‌بندی به خانه‌های 3x3 */
+        .block {
+            border: 2px solid #000;
+        }
+
+        /* جدا کردن نواحی 3x3 با border ضخیم‌تر */
+        .block:nth-child(3n) {
+            border-right: 3px solid #000;
+        }
+
+        .block:nth-child(9n+1) {
+            border-left: 3px solid #000;
+        }
+
+        .block:nth-child(1), .block:nth-child(10), .block:nth-child(19) {
+            border-top: 3px solid #000;
+        }
+
+        .block:nth-child(3), .block:nth-child(6), .block:nth-child(9),
+        .block:nth-child(12), .block:nth-child(15), .block:nth-child(18),
+        .block:nth-child(21), .block:nth-child(24), .block:nth-child(27) {
+            border-bottom: 3px solid #000;
+        }
+        
     </style>
 </head>
 <body>
@@ -136,6 +161,12 @@
                 for (let col = 0; col < sudokuSize; col++) {
                     const td = document.createElement('td');
                     const input = document.createElement('input');
+
+                    // اضافه کردن کلاس برای خانه‌های 3x3
+                    const blockClass = 'block';
+                    if ((Math.floor(row / 3) * 3 + Math.floor(col / 3)) % 3 === 0) {
+                        td.classList.add(blockClass);
+                    }
 
                     if (sudokuBoard[row][col] !== null) {
                         input.value = sudokuBoard[row][col];
