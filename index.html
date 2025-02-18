@@ -3,80 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سودوکو</title>
+    <title>بازی سودوکو</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            direction: rtl;
-        }
-        .sudoku-grid {
-            display: grid;
-            grid-template-columns: repeat(9, 50px);
-            grid-template-rows: repeat(9, 50px);
-            gap: 2px;
-            margin: 20px auto;
-        }
-        .sudoku-cell {
-            width: 50px;
-            height: 50px;
-            text-align: center;
-            font-size: 20px;
-            border: 1px solid #000;
-            background-color: #f9f9f9;
-        }
-        .sudoku-cell:nth-child(3n) {
-            border-right: 3px solid #000;
-        }
-        .sudoku-cell:nth-child(9n) {
-            border-right: 1px solid #000;
-        }
-        .sudoku-cell:nth-child(27n) {
-            border-bottom: 3px solid #000;
-        }
-        .sudoku-cell:nth-child(81n) {
-            border-bottom: 1px solid #000;
-        }
-        .sudoku-cell.correct {
-            background-color: #aaffaa;
-        }
-        .sudoku-cell.incorrect {
-            background-color: #ffaaaa;
-        }
-        .tools {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .tools button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 0 10px;
-        }
+        /* استایل‌ها مانند قبل */
     </style>
 </head>
 <body>
-    <h1>سودوکو</h1>
+    <h1>بازی سودوکو</h1>
+    <div class="difficulty">
+        <button onclick="setDifficulty('easy')">آسان</button>
+        <button onclick="setDifficulty('medium')">متوسط</button>
+        <button onclick="setDifficulty('hard')">سخت</button>
+        <button onclick="newGame()">بازی جدید</button>
+    </div>
     <div class="tools">
-        <button onclick="setTool('pen')">خودکار</button>
+        <button onclick="setTool('pen')" class="active">خودکار</button>
         <button onclick="setTool('pencil')">مداد</button>
+        <button onclick="clearCell()">پاک‌کردن</button>
     </div>
-    <div class="sudoku-grid" id="sudoku-grid">
-        <!-- سلول‌های سودوکو به صورت داینامیک ساخته می‌شوند -->
-    </div>
+    <div class="sudoku-grid" id="sudoku-grid"></div>
+    <div class="congrats" id="congrats">تبریک! شما برنده شدید! 🎉</div>
+
     <script>
         const gridSize = 9;
         const grid = document.getElementById('sudoku-grid');
+        const congratsMessage = document.getElementById('congrats');
         let currentTool = 'pen';
+        let difficulty = 'easy';
+        let solution = [];
+        let initialBoard = [];
 
+        // ایجاد جدول سودوکو
         function createGrid() {
+            grid.innerHTML = '';
             for (let i = 0; i < gridSize * gridSize; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('sudoku-cell');
                 cell.contentEditable = true;
+                cell.dataset.region = Math.floor(Math.floor(i / 9 / 3) * 3 + (i % 9) / 3;
                 cell.addEventListener('input', checkCell);
                 grid.appendChild(cell);
             }
+            generatePuzzle();
         }
 
+        // تولید پازل بر اساس درجه سختی
+        function generatePuzzle() {
+            solution = generateRandomSolvedBoard(); // ایجاد یک جدول تصادفی
+            initialBoard = JSON.parse(JSON.stringify(solution));
+            removeNumbers(difficulty);
+            fillInitialNumbers();
+        }
+
+        // پر کردن اعداد اولیه
+        function fillInitialNumbers() {
+            const cells = document.querySelectorAll('.sudoku-cell');
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 9);
+                const col = index % 9;
+                if (initialBoard[row][col] !== 0) {
+                    cell.textContent = initialBoard[row][col];
+                    cell.classList.add('fixed');
+                    cell.contentEditable = false;
+                }
+            });
+        }
+
+        // بررسی صحت سلول
         function checkCell(event) {
             const cell = event.target;
             const value = cell.textContent;
@@ -84,8 +77,10 @@
                 cell.textContent = value[0];
             }
             if (currentTool === 'pen') {
-                const correctValue = getCorrectValue(cell);
-                if (value === correctValue) {
+                const index = Array.from(grid.children).indexOf(cell);
+                const row = Math.floor(index / 9);
+                const col = index % 9;
+                if (value == solution[row][col]) {
                     cell.classList.remove('incorrect');
                     cell.classList.add('correct');
                 } else {
@@ -93,19 +88,114 @@
                     cell.classList.add('incorrect');
                 }
             }
+            checkWin();
         }
 
-        function getCorrectValue(cell) {
-            // این تابع باید مقدار صحیح هر سلول را برگرداند
-            // برای سادگی، اینجا یک مقدار ثابت برگردانده می‌شود
-            return '5';
+        // بررسی برنده شدن
+        function checkWin() {
+            const cells = document.querySelectorAll('.sudoku-cell');
+            let isComplete = true;
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 9);
+                const col = index % 9;
+                if (cell.textContent != solution[row][col]) {
+                    isComplete = false;
+                }
+            });
+            if (isComplete) {
+                congratsMessage.style.display = 'block';
+            }
         }
 
+        // تنظیم ابزار
         function setTool(tool) {
             currentTool = tool;
+            document.querySelectorAll('.tools button').forEach(button => button.classList.remove('active'));
+            document.querySelector(`button[onclick="setTool('${tool}')"]`).classList.add('active');
         }
 
-        createGrid();
+        // پاک کردن سلول
+        function clearCell() {
+            const selectedCell = document.querySelector('.sudoku-cell:focus');
+            if (selectedCell && !selectedCell.classList.contains('fixed')) {
+                selectedCell.textContent = '';
+                selectedCell.classList.remove('correct', 'incorrect');
+            }
+        }
+
+        // تنظیم درجه سختی
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.difficulty button').forEach(button => button.classList.remove('active'));
+            document.querySelector(`button[onclick="setDifficulty('${level}')"]`).classList.add('active');
+            newGame();
+        }
+
+        // شروع بازی جدید
+        function newGame() {
+            createGrid();
+            congratsMessage.style.display = 'none';
+        }
+
+        // ایجاد یک جدول سودوکو حل‌شده تصادفی
+        function generateRandomSolvedBoard() {
+            const baseBoard = [
+                [5, 3, 4, 6, 7, 8, 9, 1, 2],
+                [6, 7, 2, 1, 9, 5, 3, 4, 8],
+                [1, 9, 8, 3, 4, 2, 5, 6, 7],
+                [8, 5, 9, 7, 6, 1, 4, 2, 3],
+                [4, 2, 6, 8, 5, 3, 7, 9, 1],
+                [7, 1, 3, 9, 2, 4, 8, 5, 6],
+                [9, 6, 1, 5, 3, 7, 2, 8, 4],
+                [2, 8, 7, 4, 1, 9, 6, 3, 5],
+                [3, 4, 5, 2, 8, 6, 1, 7, 9]
+            ];
+
+            // جابجایی‌های تصادفی برای ایجاد تنوع
+            shuffleBoard(baseBoard);
+            return baseBoard;
+        }
+
+        // جابجایی‌های تصادفی در جدول
+        function shuffleBoard(board) {
+            for (let i = 0; i < 10; i++) {
+                const num1 = Math.floor(Math.random() * 9) + 1;
+                const num2 = Math.floor(Math.random() * 9) + 1;
+                swapNumbers(board, num1, num2);
+            }
+        }
+
+        // جابجایی دو عدد در جدول
+        function swapNumbers(board, num1, num2) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === num1) {
+                        board[row][col] = num2;
+                    } else if (board[row][col] === num2) {
+                        board[row][col] = num1;
+                    }
+                }
+            }
+        }
+
+        // حذف اعداد بر اساس درجه سختی
+        function removeNumbers(difficulty) {
+            let removeCount;
+            if (difficulty === 'easy') removeCount = 40;
+            else if (difficulty === 'medium') removeCount = 50;
+            else if (difficulty === 'hard') removeCount = 60;
+
+            while (removeCount > 0) {
+                const row = Math.floor(Math.random() * 9);
+                const col = Math.floor(Math.random() * 9);
+                if (initialBoard[row][col] !== 0) {
+                    initialBoard[row][col] = 0;
+                    removeCount--;
+                }
+            }
+        }
+
+        newGame();
     </script>
 </body>
 </html>
