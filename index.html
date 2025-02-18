@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول سودوکو با ابزارهای خودکار و مداد</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid #000;
+        }
+
+        input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            border: none;
+            font-size: 20px;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .tool-container {
+            margin-top: 20px;
+        }
+
+        .tool-button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #000;
+            border-radius: 5px;
+        }
+
+        .active {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>جدول سودوکو با ابزارهای خودکار و مداد</h2>
+        
+        <label for="difficulty">انتخاب درجه سختی (از 1 تا 3): </label>
+        <input type="number" id="difficulty" min="1" max="3" value="2">
+        <button onclick="generateSudoku()">ایجاد سودوکو</button>
+
+        <div class="tool-container">
+            <button class="tool-button" id="pen" onclick="selectTool('pen')">خودکار</button>
+            <button class="tool-button" id="pencil" onclick="selectTool('pencil')">مداد</button>
+        </div>
+
+        <table id="sudokuTable"></table>
+    </div>
+
+    <script>
+        const sudokuSize = 9;  // اندازه جدول سودوکو (9x9)
+        let sudokuBoard = [];
+        let currentTool = 'pen';  // ابزار پیش‌فرض خودکار
+
+        function generateSudoku() {
+            const difficulty = parseInt(document.getElementById('difficulty').value);
+            sudokuBoard = generateEmptyBoard();
+            fillBoard(difficulty);
+            renderBoard();
+        }
+
+        function generateEmptyBoard() {
+            const board = [];
+            for (let i = 0; i < sudokuSize; i++) {
+                board.push(new Array(sudokuSize).fill(null));
+            }
+            return board;
+        }
+
+        function fillBoard(difficulty) {
+            const filledCells = Math.floor((difficulty * sudokuSize * sudokuSize) / 3); // تعداد خانه‌های پر شده
+            let filledCount = 0;
+
+            while (filledCount < filledCells) {
+                const row = Math.floor(Math.random() * sudokuSize);
+                const col = Math.floor(Math.random() * sudokuSize);
+
+                if (sudokuBoard[row][col] === null) {
+                    const value = Math.floor(Math.random() * 9) + 1;  // یک عدد تصادفی از 1 تا 9
+                    if (isValid(row, col, value)) {
+                        sudokuBoard[row][col] = value;
+                        filledCount++;
+                    }
+                }
+            }
+        }
+
+        function isValid(row, col, num) {
+            // بررسی در سطر
+            for (let i = 0; i < sudokuSize; i++) {
+                if (sudokuBoard[row][i] === num) return false;
+            }
+
+            // بررسی در ستون
+            for (let i = 0; i < sudokuSize; i++) {
+                if (sudokuBoard[i][col] === num) return false;
+            }
+
+            // بررسی در بلوک 3x3
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (sudokuBoard[startRow + i][startCol + j] === num) return false;
+                }
+            }
+
+            return true;
+        }
+
+        function renderBoard() {
+            const table = document.getElementById('sudokuTable');
+            table.innerHTML = '';
+
+            for (let row = 0; row < sudokuSize; row++) {
+                const tr = document.createElement('tr');
+                for (let col = 0; col < sudokuSize; col++) {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+
+                    if (sudokuBoard[row][col] !== null) {
+                        input.value = sudokuBoard[row][col];
+                        input.disabled = true;
+                    } else {
+                        input.addEventListener('input', (e) => {
+                            const value = parseInt(e.target.value);
+                            if (currentTool === 'pen') {
+                                if (value >= 1 && value <= 9 && isValid(row, col, value)) {
+                                    e.target.style.backgroundColor = 'green';
+                                    sudokuBoard[row][col] = value;
+                                } else if (value >= 1 && value <= 9) {
+                                    e.target.style.backgroundColor = 'red';
+                                    sudokuBoard[row][col] = value;
+                                } else {
+                                    e.target.style.backgroundColor = '';
+                                    sudokuBoard[row][col] = null;
+                                }
+                            } else if (currentTool === 'pencil') {
+                                // برای مداد رنگ را تغییر نمی‌دهیم
+                                e.target.style.backgroundColor = '';
+                                sudokuBoard[row][col] = value;
+                            }
+                        });
+                    }
+
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+        }
+
+        function selectTool(tool) {
+            currentTool = tool;
+            document.getElementById('pen').classList.remove('active');
+            document.getElementById('pencil').classList.remove('active');
+            if (tool === 'pen') {
+                document.getElementById('pen').classList.add('active');
+            } else {
+                document.getElementById('pencil').classList.add('active');
+            }
+        }
+
+        // هنگام بارگذاری صفحه، یک جدول سودوکو با درجه سختی پیش‌فرض (2) بساز
+        window.onload = generateSudoku;
+    </script>
+
+</body>
+</html>
